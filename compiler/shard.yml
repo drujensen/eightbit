@@ -1,0 +1,13 @@
+name: atebit
+version: 0.1.0
+
+authors:
+  - Dru Jensen <drujensen@gmail.com>
+
+targets:
+  atebit:
+    main: src/atebit.cr
+
+crystal: 1.0.0
+
+license: MIT
