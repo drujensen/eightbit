@@ -8,6 +8,11 @@
 #define BUS_D7 12
 #define ACK_IO 13
 
+// Change in USART.h or HardwareSerial.h in ~/Libraries/Arduino15/...
+// #define SERIAL_RX_BUFFER_SIZE 256 
+// #define SERIAL_TX_BUFFER_SIZE 256 
+// #define SERIAL_BUFFER_SIZE 256 
+
 #define RUN_MODE 0b00000001
 
 void(* reset) (void) = 0;  // declare reset at address 0
@@ -246,7 +251,7 @@ void upload(int address) {
   }
 
   int size = 0;
-  byte buffer[64];
+  byte buffer[256];
   while (Serial.available() > 0) {
     buffer[size++] = (byte) Serial.read();
   }

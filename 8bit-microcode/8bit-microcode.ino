@@ -110,8 +110,8 @@ byte UCODE_TEMPLATE[32][8] = {
   { CO|MI,  RO|II|CE,  CO|MI,  RO|MI|CE,     AO|RI,                             IR, IR, IR },   // 0x04 STA
   { CO|MI,  RO|II|CE,  CO|MI,  RO|MI|CE,     RO|MI,         AO|RI,                  IR, IR },   // 0x05 STA*
 
-  { CO|MI,  RO|II|CE,  CO|MI,  RO|SI|CE,     SO|AI|S0|S3|SC|FI,                 IR, IR, IR },   // 0x06 ADC#
-  { CO|MI,  RO|II|CE,  CO|MI,  RO|MI|CE,     RO|SI,         SO|AI|S0|S3|SC|FI,      IR, IR },   // 0x07 ADC
+  { CO|MI,  RO|II|CE,  CO|MI,  RO|SI|CE,     SO|AI|S0|S3|FI,                    IR, IR, IR },   // 0x06 ADC#
+  { CO|MI,  RO|II|CE,  CO|MI,  RO|MI|CE,     RO|SI,         SO|AI|S0|S3|FI,         IR, IR },   // 0x07 ADC
   { CO|MI,  RO|II|CE,  CO|MI,  RO|SI|CE,     SO|AI|S1|S2|FI,                    IR, IR, IR },   // 0x08 SBC#
   { CO|MI,  RO|II|CE,  CO|MI,  RO|MI|CE,     RO|SI,         SO|AI|S1|S2|FI,         IR, IR },   // 0x09 SBC
   { CO|MI,  RO|II|CE,  CO|MI,  RO|SI|CE,     SO|AI|S0|S2|S3|SM,                 IR, IR, IR },   // 0x0A AND#
@@ -203,6 +203,11 @@ void initUCode() {
   ucode[FLAGS_Z0C0][BCC][2] = CO|MI;
   ucode[FLAGS_Z0C0][BCC][3] = RO|CI|CE;
 
+  ucode[FLAGS_Z0C0][ADCIM][4] |= SC; // unset carry flag. AND with INVERTed mask for carry bit.
+  ucode[FLAGS_Z0C0][ADCA][5] |= SC;
+  ucode[FLAGS_Z0C0][SBCIM][4] |= SC;
+  ucode[FLAGS_Z0C0][SBC][5] |= SC;
+
   // ZF = 0, CF = 1
   ucode[FLAGS_Z0C1][BNE][2] = CO|MI;
   ucode[FLAGS_Z0C1][BNE][3] = RO|CI|CE;
@@ -211,14 +216,19 @@ void initUCode() {
 
   ucode[FLAGS_Z0C1][ADCIM][4] &= ~SC; // unset carry flag. AND with INVERTed mask for carry bit.
   ucode[FLAGS_Z0C1][ADCA][5] &= ~SC;
-  ucode[FLAGS_Z0C1][SBCIM][4] |= SC;
-  ucode[FLAGS_Z0C1][SBC][5] |= SC;
+  ucode[FLAGS_Z0C1][SBCIM][4] &= ~SC;
+  ucode[FLAGS_Z0C1][SBC][5] &= ~SC;
 
   // ZF = 1, CF = 0
   ucode[FLAGS_Z1C0][BEQ][2] = CO|MI;
   ucode[FLAGS_Z1C0][BEQ][3] = RO|CI|CE;
   ucode[FLAGS_Z1C0][BCC][2] = CO|MI;
   ucode[FLAGS_Z1C0][BCC][3] = RO|CI|CE;
+
+  ucode[FLAGS_Z1C0][ADCIM][4] |= SC;
+  ucode[FLAGS_Z1C0][ADCA][5] |= SC;
+  ucode[FLAGS_Z1C0][SBCIM][4] |= SC;
+  ucode[FLAGS_Z1C0][SBC][5] |= SC;
 
   // ZF = 1, CF = 1
   ucode[FLAGS_Z1C1][BEQ][2] = CO|MI;
@@ -228,8 +238,8 @@ void initUCode() {
 
   ucode[FLAGS_Z1C1][ADCIM][4] &= ~SC; // unset carry flag. AND with INVERTed mask for carry bit.
   ucode[FLAGS_Z1C1][ADCA][5] &= ~SC;
-  ucode[FLAGS_Z1C1][SBCIM][4] |= SC;
-  ucode[FLAGS_Z1C1][SBC][5] |= SC;
+  ucode[FLAGS_Z1C1][SBCIM][4] &= ~SC;
+  ucode[FLAGS_Z1C1][SBC][5] &= ~SC;
 }
 
 void initPCode() {

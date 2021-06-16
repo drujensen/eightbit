@@ -79,15 +79,8 @@ class Atebit
     puts "labels: #{labels}"
     puts "program: #{program}"
 
-    file_number = 0
-    file = File.new("a#{file_number}.out", "wb")
+    file = File.new("a.out", "wb")
     program.each_with_index do |line, idx|
-      if (idx > 0 && idx % 64 == 0)
-        file.close
-        file_number += 1
-        file = File.new("a#{file_number}.out", "wb")
-      end
-
       if codes.has_key? line
         file.write_byte codes[line]
       elsif labels.has_key? line
