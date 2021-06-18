@@ -135,7 +135,7 @@ byte UCODE_TEMPLATE[32][8] = {
   { CO|MI,  RO|II|CE,  CO|MI,  RO|CI|CE,                                    IR, IR, IR, IR },   // 0x1A JMP
   { CO|MI,  RO|II|CE,  OI,     OO|AI,         OI,                               IR, IR, IR },   // 0x1B INA
 
-  { CO|MI,  RO|II|CE,  AO|OI,                                           IR, IR, IR, IR, IR },   // 0x1C OUT#
+  { CO|MI,  RO|II|CE,  CO|MI,  RO|OI|CE,                                    IR, IR, IR, IR },   // 0x1C OUT#
   { CO|MI,  RO|II|CE,  CO|MI,  RO|MI|CE,      RO|OI,                            IR, IR, IR },   // 0x1D OUT
   { CO|MI,  RO|II|CE,  CO|MI,  RO|MI|CE,      RO|MI,        RO|OI,                  IR, IR },   // 0x1E OUT*
   { CO|MI,  RO|II|CE,  HLT,                                             IR, IR, IR, IR, IR },   // 0x1F HLT
