@@ -13,8 +13,6 @@
 // #define SERIAL_TX_BUFFER_SIZE 256 
 // #define SERIAL_BUFFER_SIZE 256 
 
-#define RUN_MODE 0b00000001
-
 void(* reset) (void) = 0;  // declare reset at address 0
 
 // Assembly to Op Code Table
@@ -25,38 +23,51 @@ typedef struct {
 } code;
 
 code codes[] = {
-{"NOP", 0x00, false},
-{"LDA# ", 0x01, true},
-{"LDA ", 0x02, true},
-{"LDA* ", 0x03, true},
-{"STA ", 0x04, true},
-{"STA* ", 0x05, true},
-{"ADC# ", 0x06, true},
-{"ADC ", 0x07, true},
-{"SBC# ", 0x08, true},
-{"SBC ", 0x09, true},
-{"AND# ", 0x0A, true},
-{"AND ", 0x0B, true},
-{"ORA# ", 0x0C, true},
-{"ORA ", 0x0D, true},
-{"EOR# ", 0x0E, true},
-{"EOR ", 0x0F, true},
-{"INC", 0x10, false},
-{"DEC", 0x11, false},
-{"CMP# ", 0x12, true},
-{"CMP ", 0x13, true},
-{"BCC ", 0x14, true},
-{"BCS ", 0x15, true},
-{"BEQ ", 0x16, true},
-{"BNE ", 0x17, true},
-{"CLC", 0x18, false},
-{"SEC", 0x19, false},
-{"JMP ", 0x1A, true},
-{"INA", 0x1B, false},
-{"OUT# ", 0x1C, true},
-{"OUT ", 0x1D, true},
-{"OUT* ", 0x1E, true},
-{"HLT", 0x1F, false},
+{"HLT", 0x00, false},
+{"NOP", 0x04, false},
+{"LDA# ", 0x05, true},
+{"LDA ", 0x06, true},
+{"LDA* ", 0x07, true},
+{"STA ", 0x08, true},
+{"STA* ", 0x09, true},
+//skip 0A to 0F control characters
+{"ADD# ", 0x10, true},
+{"ADD ", 0x11, true},
+{"SUB# ", 0x12, true},
+{"SUB ", 0x13, true},
+{"ADC# ", 0x14, true},
+{"ADC ", 0x15, true},
+{"SBC# ", 0x16, true},
+{"SBC ", 0x17, true},
+{"AND# ", 0x18, true},
+{"AND ", 0x19, true},
+{"ORA# ", 0x1A, true},
+{"ORA ", 0x1B, true},
+{"EOR# ", 0x1C, true},
+{"EOR ", 0x1D, true},
+{"INC", 0x1E, false},
+{"DEC", 0x1F, false},
+
+{"CMP# ", 0x20, true},
+{"CMP ", 0x21, true},
+{"BCC ", 0x22, true},
+{"BCS ", 0x23, true},
+{"BEQ ", 0x24, true},
+{"BNE ", 0x25, true},
+{"CLC", 0x26, false},
+{"SEC", 0x27, false},
+
+{"JMP ", 0x2A, true},
+{"JSR ", 0x2B, true},
+{"RET", 0x2C, false},
+{"PSH", 0x2D, false},
+{"POP", 0x2E, false},
+
+{"INA", 0x30, false},
+{"OUTA", 0x31, false},
+{"OUT# ", 0x32, true},
+{"OUT ", 0x33, true},
+{"OUT* ", 0x34, true},
 };
 
 size_t size = sizeof(codes) / sizeof(code);
@@ -92,21 +103,6 @@ void setData(byte data) {
 }
 
 /*
-   Set Run Mode
-*/
-bool runMode = false;
-
-void setRunMode(byte data) {
-  shiftOut(SHIFT_DATA, SHIFT_CLK, MSBFIRST, data);
-  shiftOut(SHIFT_DATA, SHIFT_CLK, MSBFIRST, 0 | RUN_MODE);
-  digitalWrite(SHIFT_LATCH, LOW);
-  digitalWrite(SHIFT_LATCH, HIGH);
-  delay(5);
-  digitalWrite(SHIFT_LATCH, LOW);
-  runMode = true;
-}
-
-/*
    Read a byte from memory at the specified address.
 */
 byte getMemory(byte address) {
@@ -133,13 +129,26 @@ byte setMemory(byte address, byte data) {
 }
 
 /*
+   Set Run Mode
+*/
+bool runMode = false;
+
+void setRunMode() {
+  runMode = true;
+  wait_for_ack();
+  setData(0x03);
+  wait_for_ack();
+  setData(0x0);
+}
+
+/*
    set value in register
 */
 void setRegister(byte value) {
   wait_for_ack();
-  setRunMode(value);
+  setData(value);
   wait_for_ack();
-  setRunMode(0x0);
+  setData(0x0);
 }
 
 byte readBus() {
@@ -167,7 +176,8 @@ void interrupted() {
     ack = true;
   }
   if (runMode) {
-    Serial.write(readBus());
+    byte value = readBus();
+    Serial.write(value);
   }
 }
 
@@ -276,7 +286,7 @@ void set(int address, byte value) {
 
 void run() {
   Serial.println("--- Run ---");
-  setRunMode(0x0);
+  setRunMode();
 }
 
 void help() {
@@ -316,16 +326,15 @@ char nl = '\n';
 void loop() {
   if (Serial.available()) {
     rx = Serial.read();
-    Serial.print(rx);
     if (runMode) {
       setRegister(rx);
     } else {
+      Serial.print(rx);
       buffer[idx] = rx;
       if (rx == cr || rx == nl) {
         process();
         memset(buffer, 0, sizeof(buffer));      
         idx = 0;
-        prompt();
       } else {
         idx++;
       }
@@ -348,24 +357,30 @@ void process() {
     switch (command) {
         case 'n': 
           clear(); 
+          prompt();
           break;
         case 'l': 
           list(addr, val); 
+          prompt();
           break;
         case 'u': 
           upload(addr); 
+          prompt();
           break;
         case 'g': 
           get(addr); 
+          prompt();
           break;
         case 's': 
           set(addr, val); 
+          prompt();
           break;
         case 'r': 
           run(); 
           break;
         case 'h':
           help();
+          prompt();
           break;
         case 'q':
           Serial.println("Good bye!");

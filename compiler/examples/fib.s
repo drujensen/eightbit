@@ -13,8 +13,7 @@ start: LDA# 00
        INC
        STA fib2l
 calc:  LDA fib1l
-       CLC
-       ADC fib2l
+       ADD fib2l
        STA fib3l
        LDA fib1h
        ADC fib2h

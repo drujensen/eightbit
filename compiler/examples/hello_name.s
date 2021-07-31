@@ -13,6 +13,7 @@ loop: LDA ptr   ; load ptr to A
 wait: INA       ; get char from input
       CMP# 00   ; compare input with 0
       BEQ wait  ; wait until input has a value
+      OUTA      ; echo input
       STA* ptr  ; indirectly store in answ
       CMP# 0A   ; check for new line
       BEQ prnt  ; print results if done

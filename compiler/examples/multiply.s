@@ -3,8 +3,7 @@ init: LDA# 00
       STA idx  ; init to 0
       STA res  ; init to 0
 loop: LDA res  ; load the last result
-      CLC      ; clear carry bit
-      ADC age  ; add the age
+      ADD age  ; add the age
       STA res  ; store the result
       LDA idx  ; load the index
       INC      ; increment

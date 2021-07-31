@@ -16,7 +16,7 @@
 #define WRITE_EN 13
 
 #ifdef CHIP1
-  #define HLT 0b10000000 // Halt clock
+  #define SPO 0b10000000 // Stack pointer out
   #define CI  0b01000000 // Jump (program counter in)
   #define CO  0b00100000 // Program counter out
   #define CE  0b00010000 // Program counter enable
@@ -101,92 +101,90 @@
 #define FLAGS_Z1C0 1
 #define FLAGS_Z1C1 3
 
-byte UCODE_TEMPLATE[32][8] = {
-  { CO|MI,  RO|II|CE,                                               IR, IR, IR, IR, IR, IR },   // 0x00 NOP
+byte UCODE_TEMPLATE[64][8] = {
+  { OO|II,  OI,                                                     IR, IR, IR, IR, IR, IR },   // 0x00 HLT
+  { OO|II,  OI,        OO|MI,  RO|OI,                                       IR, IR, IR, IR },   // 0x01 GET
+  { OO|II,  OI,        OO|MI,  RO|OI,        OO|RI,         RO|OI,                  IR, IR },   // 0x02 SET
+  { 0,      0,         CO|MI,  RO|II,                                       IR, IR, IR, IR },   // 0x03 RUN
+  { CO|MI,  RO|II|CE,                                               IR, IR, IR, IR, IR, IR },   // 0x04 NOP
   
-  { CO|MI,  RO|II|CE,  CO|MI,  RO|AI|CE,                                    IR, IR, IR, IR },   // 0x01 LDA#
-  { CO|MI,  RO|II|CE,  CO|MI,  RO|MI|CE,     RO|AI,                             IR, IR, IR },   // 0x02 LDA
-  { CO|MI,  RO|II|CE,  CO|MI,  RO|MI|CE,     RO|MI,         RO|AI,                  IR, IR },   // 0x03 LDA*
-  { CO|MI,  RO|II|CE,  CO|MI,  RO|MI|CE,     AO|RI,                             IR, IR, IR },   // 0x04 STA
-  { CO|MI,  RO|II|CE,  CO|MI,  RO|MI|CE,     RO|MI,         AO|RI,                  IR, IR },   // 0x05 STA*
+  { CO|MI,  RO|II|CE,  CO|MI,  RO|AI|CE,                                    IR, IR, IR, IR },   // 0x05 LDA#
+  { CO|MI,  RO|II|CE,  CO|MI,  RO|MI|CE,     RO|AI,                             IR, IR, IR },   // 0x06 LDA
+  { CO|MI,  RO|II|CE,  CO|MI,  RO|MI|CE,     RO|MI,         RO|AI,                  IR, IR },   // 0x07 LDA*
+  { CO|MI,  RO|II|CE,  CO|MI,  RO|MI|CE,     AO|RI,                             IR, IR, IR },   // 0x08 STA
+  { CO|MI,  RO|II|CE,  CO|MI,  RO|MI|CE,     RO|MI,         AO|RI,                  IR, IR },   // 0x09 STA*
 
-  { CO|MI,  RO|II|CE,  CO|MI,  RO|SI|CE,     SO|AI|S0|S3|FI,                    IR, IR, IR },   // 0x06 ADC#
-  { CO|MI,  RO|II|CE,  CO|MI,  RO|MI|CE,     RO|SI,         SO|AI|S0|S3|FI,         IR, IR },   // 0x07 ADC
-  { CO|MI,  RO|II|CE,  CO|MI,  RO|SI|CE,     SO|AI|S1|S2|FI,                    IR, IR, IR },   // 0x08 SBC#
-  { CO|MI,  RO|II|CE,  CO|MI,  RO|MI|CE,     RO|SI,         SO|AI|S1|S2|FI,         IR, IR },   // 0x09 SBC
-  { CO|MI,  RO|II|CE,  CO|MI,  RO|SI|CE,     SO|AI|S0|S2|S3|SM,                 IR, IR, IR },   // 0x0A AND#
-  { CO|MI,  RO|II|CE,  CO|MI,  RO|MI|CE,     RO|SI,         SO|AI|S0|S2|S3|SM,      IR, IR },   // 0x0B AND
-  { CO|MI,  RO|II|CE,  CO|MI,  RO|SI|CE,     SO|AI|S0|S1|S2|SM,                 IR, IR, IR },   // 0x0C ORA#
-  { CO|MI,  RO|II|CE,  CO|MI,  RO|MI|CE,     RO|SI,         SO|AI|S0|S1|S2|SM,      IR, IR },   // 0x0D ORA
-  { CO|MI,  RO|II|CE,  CO|MI,  RO|SI|CE,     SO|AI|S1|S2|SM,                    IR, IR, IR },   // 0x0E EOR#
-  { CO|MI,  RO|II|CE,  CO|MI,  RO|MI|CE,     RO|SI,         SO|AI|S1|S2|SM,         IR, IR },   // 0x0F EOR
-  { CO|MI,  RO|II|CE,  SO|AI,                                           IR, IR, IR, IR, IR },   // 0x10 INC
-  { CO|MI,  RO|II|CE,  SO|AI|S0|S1|S2|S3|SC,                            IR, IR, IR, IR, IR },   // 0x11 DEC
+  { CO|MI,  RO|II|CE,                                               IR, IR, IR, IR, IR, IR },   // 0x0A NOP
+  { CO|MI,  RO|II|CE,                                               IR, IR, IR, IR, IR, IR },   // 0x0B NOP
+  { CO|MI,  RO|II|CE,                                               IR, IR, IR, IR, IR, IR },   // 0x0C NOP
+  { CO|MI,  RO|II|CE,                                               IR, IR, IR, IR, IR, IR },   // 0x0D NOP
+  { CO|MI,  RO|II|CE,                                               IR, IR, IR, IR, IR, IR },   // 0x0E NOP
+  { CO|MI,  RO|II|CE,                                               IR, IR, IR, IR, IR, IR },   // 0x0F NOP
 
-  { CO|MI,  RO|II|CE,  CO|MI,  RO|SI|FR|CE,  S1|S2|SC|FI,                       IR, IR, IR },   // 0x12 CMP#
-  { CO|MI,  RO|II|CE,  CO|MI,  RO|MI|FR|CE,  RO|SI,         S1|S2|SC|FI,            IR, IR },   // 0x13 CMP
-  { CO|MI,  RO|II|CE,  CE,                                              IR, IR, IR, IR, IR },   // 0x14 BCC
-  { CO|MI,  RO|II|CE,  CE,                                              IR, IR, IR, IR, IR },   // 0x15 BCS
-  { CO|MI,  RO|II|CE,  CE,                                              IR, IR, IR, IR, IR },   // 0x16 BEQ
-  { CO|MI,  RO|II|CE,  CE,                                              IR, IR, IR, IR, IR },   // 0x17 BNE
-  { CO|MI,  RO|II|CE,  FR,                                              IR, IR, IR, IR, IR },   // 0x18 CLC
-  { CO|MI,  RO|II|CE,  FS,                                              IR, IR, IR, IR, IR },   // 0x19 SEC
+  { CO|MI,  RO|II|CE,  CO|MI,  RO|SI|CE,     SO|AI|S0|S3|SC|FI,                 IR, IR, IR },   // 0x10 ADD#
+  { CO|MI,  RO|II|CE,  CO|MI,  RO|MI|CE,     RO|SI,         SO|AI|S0|S3|SC|FI,      IR, IR },   // 0x11 ADD
+  { CO|MI,  RO|II|CE,  CO|MI,  RO|SI|CE,     SO|AI|S1|S2|FI,                    IR, IR, IR },   // 0x12 SUB#
+  { CO|MI,  RO|II|CE,  CO|MI,  RO|MI|CE,     RO|SI,         SO|AI|S1|S2|FI,         IR, IR },   // 0x13 SUB
+  { CO|MI,  RO|II|CE,  CO|MI,  RO|SI|CE,     SO|AI|S0|S3|FI,                    IR, IR, IR },   // 0x14 ADC#
+  { CO|MI,  RO|II|CE,  CO|MI,  RO|MI|CE,     RO|SI,         SO|AI|S0|S3|FI,         IR, IR },   // 0x15 ADC
+  { CO|MI,  RO|II|CE,  CO|MI,  RO|SI|CE,     SO|AI|S1|S2|FI,                    IR, IR, IR },   // 0x16 SBC#
+  { CO|MI,  RO|II|CE,  CO|MI,  RO|MI|CE,     RO|SI,         SO|AI|S1|S2|FI,         IR, IR },   // 0x17 SBC
+  { CO|MI,  RO|II|CE,  CO|MI,  RO|SI|CE,     SO|AI|S0|S2|S3|SM,                 IR, IR, IR },   // 0x18 AND#
+  { CO|MI,  RO|II|CE,  CO|MI,  RO|MI|CE,     RO|SI,         SO|AI|S0|S2|S3|SM,      IR, IR },   // 0x19 AND
+  { CO|MI,  RO|II|CE,  CO|MI,  RO|SI|CE,     SO|AI|S0|S1|S2|SM,                 IR, IR, IR },   // 0x1A ORA#
+  { CO|MI,  RO|II|CE,  CO|MI,  RO|MI|CE,     RO|SI,         SO|AI|S0|S1|S2|SM,      IR, IR },   // 0x1B ORA
+  { CO|MI,  RO|II|CE,  CO|MI,  RO|SI|CE,     SO|AI|S1|S2|SM,                    IR, IR, IR },   // 0x1C EOR#
+  { CO|MI,  RO|II|CE,  CO|MI,  RO|MI|CE,     RO|SI,         SO|AI|S1|S2|SM,         IR, IR },   // 0x1D EOR
+  { CO|MI,  RO|II|CE,  SO|AI,                                           IR, IR, IR, IR, IR },   // 0x1E INC
+  { CO|MI,  RO|II|CE,  SO|AI|S0|S1|S2|S3|SC,                            IR, IR, IR, IR, IR },   // 0x1F DEC
+
+  { CO|MI,  RO|II|CE,  CO|MI,  RO|SI|FR|CE,  S1|S2|SC|FI,                       IR, IR, IR },   // 0x20 CMP#
+  { CO|MI,  RO|II|CE,  CO|MI,  RO|MI|FR|CE,  RO|SI,         S1|S2|SC|FI,            IR, IR },   // 0x21 CMP
+  { CO|MI,  RO|II|CE,  CE,                                              IR, IR, IR, IR, IR },   // 0x22 BCC
+  { CO|MI,  RO|II|CE,  CE,                                              IR, IR, IR, IR, IR },   // 0x23 BCS
+  { CO|MI,  RO|II|CE,  CE,                                              IR, IR, IR, IR, IR },   // 0x24 BEQ
+  { CO|MI,  RO|II|CE,  CE,                                              IR, IR, IR, IR, IR },   // 0x25 BNE
+  { CO|MI,  RO|II|CE,  FR,                                              IR, IR, IR, IR, IR },   // 0x26 CLC
+  { CO|MI,  RO|II|CE,  FS,                                              IR, IR, IR, IR, IR },   // 0x27 SEC
+  { CO|MI,  RO|II|CE,                                               IR, IR, IR, IR, IR, IR },   // 0x28 NOP - LSH
+  { CO|MI,  RO|II|CE,                                               IR, IR, IR, IR, IR, IR },   // 0x29 NOP - RSH
   
-  { CO|MI,  RO|II|CE,  CO|MI,  RO|CI|CE,                                    IR, IR, IR, IR },   // 0x1A JMP
-  { CO|MI,  RO|II|CE,  OI,     OO|AI,         OI,                               IR, IR, IR },   // 0x1B INA
+  { CO|MI,  RO|II|CE,  CO|MI,  RO|CI|CE,                                    IR, IR, IR, IR },   // 0x2A JMP
+  { OO|II,  RO|II|CE,                                               IR, IR, IR, IR, IR, IR },   // 0x2B JSR
+  { OO|II,  RO|II|CE,                                               IR, IR, IR, IR, IR, IR },   // 0x2C RET
+  { OO|II,  RO|II|CE,                                               IR, IR, IR, IR, IR, IR },   // 0x2D PSH
+  { OO|II,  RO|II|CE,                                               IR, IR, IR, IR, IR, IR },   // 0x2E POP
+  { OO|II,  RO|II|CE,                                               IR, IR, IR, IR, IR, IR },   // 0x2F NOP
 
-  { CO|MI,  RO|II|CE,  CO|MI,  RO|OI|CE,                                    IR, IR, IR, IR },   // 0x1C OUT#
-  { CO|MI,  RO|II|CE,  CO|MI,  RO|MI|CE,      RO|OI,                            IR, IR, IR },   // 0x1D OUT
-  { CO|MI,  RO|II|CE,  CO|MI,  RO|MI|CE,      RO|MI,        RO|OI,                  IR, IR },   // 0x1E OUT*
-  { CO|MI,  RO|II|CE,  HLT,                                             IR, IR, IR, IR, IR },   // 0x1F HLT
+  { CO|MI,  RO|II|CE,  OI,     OO|AI,         OI,                               IR, IR, IR },   // 0x30 INA
+  { CO|MI,  RO|II|CE,  AO|OI,                                           IR, IR, IR, IR, IR },   // 0x31 OUTA
+  { CO|MI,  RO|II|CE,  CO|MI,  RO|OI|CE,                                    IR, IR, IR, IR },   // 0x32 OUT#
+  { CO|MI,  RO|II|CE,  CO|MI,  RO|MI|CE,      RO|OI,                            IR, IR, IR },   // 0x33 OUT
+  { CO|MI,  RO|II|CE,  CO|MI,  RO|MI|CE,      RO|MI,        RO|OI,                  IR, IR },   // 0x34 OUT*
+  { OO|II,  RO|II|CE,                                               IR, IR, IR, IR, IR, IR },   // 0x35 NOP
+  { OO|II,  RO|II|CE,                                               IR, IR, IR, IR, IR, IR },   // 0x36 NOP
+  { OO|II,  RO|II|CE,                                               IR, IR, IR, IR, IR, IR },   // 0x37 NOP
+  { OO|II,  RO|II|CE,                                               IR, IR, IR, IR, IR, IR },   // 0x38 NOP
+  { OO|II,  RO|II|CE,                                               IR, IR, IR, IR, IR, IR },   // 0x39 NOP
+  { OO|II,  RO|II|CE,                                               IR, IR, IR, IR, IR, IR },   // 0x3A NOP
+  { OO|II,  RO|II|CE,                                               IR, IR, IR, IR, IR, IR },   // 0x3B NOP
+  { OO|II,  RO|II|CE,                                               IR, IR, IR, IR, IR, IR },   // 0x3C NOP
+  { OO|II,  RO|II|CE,                                               IR, IR, IR, IR, IR, IR },   // 0x3D NOP
+  { OO|II,  RO|II|CE,                                               IR, IR, IR, IR, IR, IR },   // 0x3E NOP
+  { OO|II,  RO|II|CE,                                               IR, IR, IR, IR, IR, IR },   // 0x3F NOP
 };
 
-byte PCODE_TEMPLATE[32][8] = {
-  { OO|II,  OI,                               IR, IR, IR, IR, IR, IR },   // 0x00 NOP
-  { OO|II,  OI, OO|MI, RO|OI,                         IR, IR, IR, IR },   // 0x01 GET
-  { OO|II,  OI, OO|MI, RO|OI, OO|RI, RO|OI,                   IR, IR },   // 0x02 SET
-  { OO|II,  OI,                               IR, IR, IR, IR, IR, IR },   // 0x00 NOP
-  { OO|II,  OI,                               IR, IR, IR, IR, IR, IR },   // 0x00 NOP
-  { OO|II,  OI,                               IR, IR, IR, IR, IR, IR },   // 0x00 NOP
-  { OO|II,  OI,                               IR, IR, IR, IR, IR, IR },   // 0x00 NOP
-  { OO|II,  OI,                               IR, IR, IR, IR, IR, IR },   // 0x00 NOP
-  { OO|II,  OI,                               IR, IR, IR, IR, IR, IR },   // 0x00 NOP
-  { OO|II,  OI,                               IR, IR, IR, IR, IR, IR },   // 0x00 NOP
-  { OO|II,  OI,                               IR, IR, IR, IR, IR, IR },   // 0x00 NOP
-  { OO|II,  OI,                               IR, IR, IR, IR, IR, IR },   // 0x00 NOP
-  { OO|II,  OI,                               IR, IR, IR, IR, IR, IR },   // 0x00 NOP
-  { OO|II,  OI,                               IR, IR, IR, IR, IR, IR },   // 0x00 NOP
-  { OO|II,  OI,                               IR, IR, IR, IR, IR, IR },   // 0x00 NOP
-  { OO|II,  OI,                               IR, IR, IR, IR, IR, IR },   // 0x00 NOP
-  { OO|II,  OI,                               IR, IR, IR, IR, IR, IR },   // 0x00 NOP
-  { OO|II,  OI,                               IR, IR, IR, IR, IR, IR },   // 0x00 NOP
-  { OO|II,  OI,                               IR, IR, IR, IR, IR, IR },   // 0x00 NOP
-  { OO|II,  OI,                               IR, IR, IR, IR, IR, IR },   // 0x00 NOP
-  { OO|II,  OI,                               IR, IR, IR, IR, IR, IR },   // 0x00 NOP
-  { OO|II,  OI,                               IR, IR, IR, IR, IR, IR },   // 0x00 NOP
-  { OO|II,  OI,                               IR, IR, IR, IR, IR, IR },   // 0x00 NOP
-  { OO|II,  OI,                               IR, IR, IR, IR, IR, IR },   // 0x00 NOP
-  { OO|II,  OI,                               IR, IR, IR, IR, IR, IR },   // 0x00 NOP
-  { OO|II,  OI,                               IR, IR, IR, IR, IR, IR },   // 0x00 NOP
-  { OO|II,  OI,                               IR, IR, IR, IR, IR, IR },   // 0x00 NOP
-  { OO|II,  OI,                               IR, IR, IR, IR, IR, IR },   // 0x00 NOP
-  { OO|II,  OI,                               IR, IR, IR, IR, IR, IR },   // 0x00 NOP
-  { OO|II,  OI,                               IR, IR, IR, IR, IR, IR },   // 0x00 NOP
-  { OO|II,  OI,                               IR, IR, IR, IR, IR, IR },   // 0x00 NOP
-  { OO|II,  OI,                               IR, IR, IR, IR, IR, IR },   // 0x00 NOP
-};
+byte ucode[4][64][8];
 
-byte ucode[4][32][8];
+static byte ADCIM = 0x14;
+static byte ADCA = 0x15;
+static byte SBCIM = 0x16;
+static byte SBC = 0x17;
 
-static byte ADCIM = 0x06;
-static byte ADCA = 0x07;
-static byte SBCIM = 0x08;
-static byte SBC = 0x09;
-
-static byte BCC = 0x14;
-static byte BCS = 0x15;
-static byte BEQ = 0x16;
-static byte BNE = 0x17;
+static byte BCC = 0x22;
+static byte BCS = 0x23;
+static byte BEQ = 0x24;
+static byte BNE = 0x25;
 
 void initUCode() {
   // run mode
@@ -203,7 +201,7 @@ void initUCode() {
   ucode[FLAGS_Z0C0][BCC][2] = CO|MI;
   ucode[FLAGS_Z0C0][BCC][3] = RO|CI|CE;
 
-  ucode[FLAGS_Z0C0][ADCIM][4] |= SC; // unset carry flag. AND with INVERTed mask for carry bit.
+  ucode[FLAGS_Z0C0][ADCIM][4] |= SC; // set carry flag.
   ucode[FLAGS_Z0C0][ADCA][5] |= SC;
   ucode[FLAGS_Z0C0][SBCIM][4] |= SC;
   ucode[FLAGS_Z0C0][SBC][5] |= SC;
@@ -242,14 +240,6 @@ void initUCode() {
   ucode[FLAGS_Z1C1][SBC][5] &= ~SC;
 }
 
-void initPCode() {
-  // program mode
-  for (byte flag = 0; flag < 4; flag += 1) {
-    Serial.println("Mem copy for programming mode ");
-    memcpy(ucode[flag], PCODE_TEMPLATE, sizeof(PCODE_TEMPLATE));
-  };
-
-}
 /*
  * Output the address bits and outputEnable signal using shift registers.
  */
@@ -331,36 +321,16 @@ void setup() {
   digitalWrite(WRITE_EN, HIGH);
   pinMode(WRITE_EN, OUTPUT);
 
-  // Program data bytes
-  Serial.println("Init PCode");
-  initPCode();
-
-  // Program data bytes
-  Serial.print("Programming EEPROM for PCode");
-
-  // Program the 8 high-order bits of microcode into the first 128 bytes of EEPROM
-  for (int address = 0; address < 1024; address += 1) {
-    byte flags       = (address & 0b1100000000) >> 8;
-    byte instruction = (address & 0b0011111000) >> 3;
-    byte step        = (address & 0b0000000111);
-
-    writeEEPROM(address, ucode[flags][instruction][step]);
-
-    if (address % 64 == 0) {
-      Serial.print(".");
-    }
-  }
-
   Serial.println("Init UCode");
   initUCode();
 
   // Program data bytes
   Serial.print("Programming EEPROM for UCode");
   // Program the 8 high-order bits of microcode into the first 128 bytes of EEPROM
-  for (int address = 1024; address < 2048; address += 1) {
-    byte flags       = (address & 0b1100000000) >> 8;
-    byte instruction = (address & 0b0011111000) >> 3;
-    byte step        = (address & 0b0000000111);
+  for (int address = 0; address < 2048; address += 1) {
+    byte flags       = (address & 0b11000000000) >> 9;
+    byte instruction = (address & 0b00111111000) >> 3;
+    byte step        = (address & 0b00000000111);
 
     writeEEPROM(address, ucode[flags][instruction][step]);
 
